@@ -12,18 +12,17 @@ module.exports = async (req, res) => {
 
   try {
     const xmlData = await fetch(XML_URL).then(r => r.text());
-    const result = await parseStringPromise(xmlData, { explicitArray: false });
+    const result = await parseStringPromise(xmlData);
 
-    const items = result?.SHOP?.SHOPITEM;
-    if (!items || !Array.isArray(items)) {
-      return res.status(500).send("Ошибка: товары не найдены в XML (SHOP -> SHOPITEM)");
+    const products = result.SHOP?.SHOPITEM;
+    if (!products || !Array.isArray(products)) {
+      return res.status(500).send("Ошибка: товары не найдены в XML (ожидается SHOP -> SHOPITEM)");
     }
 
-    for (let product of items) {
-      const title = product?.PRODUCT || "Без названия";
-      const priceRaw = product?.PRICE_VAT || "0.00";
-      const price = parseFloat(priceRaw.replace(/[^\d.]/g, "")) || 0;
-      const sku = product?.ITEM_ID || `SKU-${Math.random().toString(36).substring(2, 8)}`;
+    for (let product of products) {
+      const title = product.PRODUCT?.[0] || "Без названия";
+      const price = parseFloat((product.PRICE_VAT || [0])[0]);
+      const sku = (product.CODE || [""])[0];
 
       const body = {
         product: {
@@ -49,7 +48,7 @@ module.exports = async (req, res) => {
 
     res.status(200).send("Импорт завершен успешно");
   } catch (error) {
-    console.error("Ошибка при импорте:", error);
+    console.error(error);
     res.status(500).send("Ошибка импорта: " + error.message);
   }
 };
