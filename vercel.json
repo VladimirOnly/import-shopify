@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/import-shopify.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/import-shopify",
+      "dest": "/api/import-shopify.js"
+    }
+  ]
+}
