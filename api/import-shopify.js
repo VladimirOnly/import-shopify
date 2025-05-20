@@ -1,4 +1,5 @@
 const fetch = require('node-fetch');
+const { parseStringPromise } = require('xml2js');
 
 module.exports = async (req, res) => {
   const SHOPIFY_ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
@@ -11,15 +12,20 @@ module.exports = async (req, res) => {
 
   try {
     const xmlData = await fetch(XML_URL).then(r => r.text());
-
-    const { parseStringPromise } = require('xml2js');
     const result = await parseStringPromise(xmlData);
-    const products = result.rss.channel[0].item;
+
+    const channel = result?.rss?.channel?.[0];
+    if (!channel || !channel.item) {
+      return res.status(500).send("Ошибка: не удалось найти товары в XML");
+    }
+
+    const products = channel.item;
 
     for (let product of products) {
-      const title = product.title[0];
-      const price = parseFloat(product['g:price'][0]);
-      const sku = product['g:id'][0];
+      const title = product.title?.[0] || "Без названия";
+      const priceRaw = product['g:price']?.[0] || "0.00";
+      const price = parseFloat(priceRaw.replace(/[^\d.]/g, "")) || 0;
+      const sku = product['g:id']?.[0] || `SKU-${Math.random().toString(36).substring(2, 8)}`;
 
       const body = {
         product: {
@@ -45,7 +51,7 @@ module.exports = async (req, res) => {
 
     res.status(200).send("Импорт завершен успешно");
   } catch (error) {
-    console.error(error);
-    res.status(500).send("Ошибка импорта");
+    console.error("Ошибка при импорте:", error);
+    res.status(500).send("Ошибка импорта: " + error.message);
   }
 };
