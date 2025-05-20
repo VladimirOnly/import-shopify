@@ -12,20 +12,18 @@ module.exports = async (req, res) => {
 
   try {
     const xmlData = await fetch(XML_URL).then(r => r.text());
-    const result = await parseStringPromise(xmlData);
+    const result = await parseStringPromise(xmlData, { explicitArray: false });
 
-    const channel = result?.rss?.channel?.[0];
-    if (!channel || !channel.item) {
-      return res.status(500).send("Ошибка: не удалось найти товары в XML");
+    const items = result?.SHOP?.SHOPITEM;
+    if (!items || !Array.isArray(items)) {
+      return res.status(500).send("Ошибка: товары не найдены в XML (SHOP -> SHOPITEM)");
     }
 
-    const products = channel.item;
-
-    for (let product of products) {
-      const title = product.title?.[0] || "Без названия";
-      const priceRaw = product['g:price']?.[0] || "0.00";
+    for (let product of items) {
+      const title = product?.PRODUCT || "Без названия";
+      const priceRaw = product?.PRICE_VAT || "0.00";
       const price = parseFloat(priceRaw.replace(/[^\d.]/g, "")) || 0;
-      const sku = product['g:id']?.[0] || `SKU-${Math.random().toString(36).substring(2, 8)}`;
+      const sku = product?.ITEM_ID || `SKU-${Math.random().toString(36).substring(2, 8)}`;
 
       const body = {
         product: {
