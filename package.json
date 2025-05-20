@@ -1,6 +1,6 @@
 {
   "name": "shopify-importer",
-  "version": "1.0.0",
+  "version": "2",
   "main": "api/import-shopify.js",
   "dependencies": {
     "node-fetch": "^2.6.9",
