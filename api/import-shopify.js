@@ -19,7 +19,7 @@ module.exports = async (req, res) => {
       throw new Error("Не удалось найти товары в XML (ожидается структура data > post)");
     }
 
-    const limited = products.slice(0, 20); // Ограничим, например, 20 товарами для теста
+    const limited = products.slice(0, 120); // Ограничим, например, 20 товарами для теста
 
     const requests = limited.map(product => {
       const title = product.Title?.[0] || "Без названия";
