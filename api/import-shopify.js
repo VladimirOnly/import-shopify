@@ -1,4 +1,4 @@
-const fetch = require('node-fetch'); 
+const fetch = require('node-fetch');
 const { parseStringPromise } = require('xml2js');
 
 module.exports = async (req, res) => {
@@ -12,17 +12,17 @@ module.exports = async (req, res) => {
 
   try {
     const xmlData = await fetch(XML_URL).then(r => r.text());
-    const result = await parseStringPromise(xmlData);
+    const parsed = await parseStringPromise(xmlData);
 
-    const products = result.SHOP?.SHOPITEM;
+    const products = parsed.data.post;
     if (!products || !Array.isArray(products)) {
-      return res.status(500).send("Ошибка: товары не найдены в XML (ожидается SHOP -> SHOPITEM)");
+      throw new Error("Не удалось найти товары в XML (ожидается структура data > post)");
     }
 
     for (let product of products) {
-      const title = product.PRODUCT?.[0] || "Без названия";
-      const price = parseFloat((product.PRICE_VAT || [0])[0]);
-      const sku = (product.CODE || [""])[0];
+      const title = product.Title?.[0] || "Без названия";
+      const price = parseFloat(product.RegularPrice?.[0]) || 0;
+      const sku = product.Sku?.[0] || `sku-${Date.now()}`;
 
       const body = {
         product: {
