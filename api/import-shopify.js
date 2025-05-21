@@ -19,7 +19,9 @@ module.exports = async (req, res) => {
       throw new Error("Не удалось найти товары в XML (ожидается структура data > post)");
     }
 
-    for (let product of products) {
+    const limited = products.slice(0, 20); // Ограничим, например, 20 товарами для теста
+
+    const requests = limited.map(product => {
       const title = product.Title?.[0] || "Без названия";
       const price = parseFloat(product.RegularPrice?.[0]) || 0;
       const sku = product.Sku?.[0] || `sku-${Date.now()}`;
@@ -36,7 +38,7 @@ module.exports = async (req, res) => {
         }
       };
 
-      await fetch(`https://${SHOPIFY_STORE}.myshopify.com/admin/api/2023-10/products.json`, {
+      return fetch(`https://${SHOPIFY_STORE}.myshopify.com/admin/api/2023-10/products.json`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -44,9 +46,11 @@ module.exports = async (req, res) => {
         },
         body: JSON.stringify(body)
       });
-    }
+    });
 
-    res.status(200).send("Импорт завершен успешно");
+    await Promise.all(requests);
+
+    res.status(200).send(`Импорт завершён успешно. Импортировано: ${limited.length}`);
   } catch (error) {
     console.error(error);
     res.status(500).send("Ошибка импорта: " + error.message);
